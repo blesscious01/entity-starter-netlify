@@ -511,8 +511,8 @@ function build(){
   const rpm={format_version:2,header:{name:name+" RP",description:disp+" resource pack",uuid:ids.rpPack,version:[1,0,0],min_engine_version:me},
     modules:[{type:"resources",uuid:ids.rpMod,version:[1,0,0]}]};
   const sv={format_version:fv,"minecraft:entity":{description:{identifier:full,is_spawnable:true,is_summonable:true,is_experimental:false,runtime_identifier:(on("rti")&&curV)?"minecraft:"+curV:undefined,properties:(needMood||Object.keys(xprops).length)?Object.assign({},needMood?{[ns+":mood"]:{type:"enum",values:["calm","alert","enraged"],default:"calm",client_sync:true}}:{},xprops):undefined},component_groups:groups,components:c,events:events}};
-  const cl={format_version:"1.10.0","minecraft:client_entity":{description:{identifier:full,materials:{default:"entity_alpha"},
-    textures:{default:L.tex},geometry:{default:L.geo},spawn_egg:{base_color:$("c1").value,overlay_color:$("c2").value},render_controllers:["controller.render.default"]}}};
+  const cl={format_version:"1.10.0","minecraft:client_entity":{description:{identifier:full,materials:{default:"entity_alphatest"},
+    textures:{default:L.tex},geometry:{default:L.geo},spawn_egg:{base_color:$("c1").value,overlay_color:$("c2").value},render_controllers:["controller.render."+ns+"_"+id]}}};
   const lang="entity."+full+".name="+disp+"\nitem.spawn_egg.entity."+full+".name=Spawn "+disp+"\n";
 
   const vx=visuals({ns,id,full,w,h,mv:planMv,needMood,cl,dir,vars});
@@ -669,6 +669,13 @@ function visuals(o){
   const glow=gb("geyes")||gb("gacc"),an="animation."+T+".",anims={},animate=[];
   const addPart=()=>{if(!pfx)return;d.particle_effects={fx:pfx};anims[an+"particles"]={loop:true,animation_length:rate,particle_effects:{"0.0":{effect:"fx"}}};animate.push("particles")};
   const finish=()=>{
+    // Every client entity needs a render controller. Previously the generator
+    // only wrote one when variants/mood were enabled, while the client entity
+    // always referenced one. That made otherwise valid entities fail to render.
+    if(!d.render_controllers||!d.render_controllers.length){
+      out.text[R+"render_controllers/"+o.id+".render_controllers.json"]=J({format_version:"1.10.0",render_controllers:{["controller.render."+T]:{geometry:"Geometry.default",materials:[{"*":"Material.default"}],textures:["Texture.default"]}}});
+      d.render_controllers=["controller.render."+T];
+    }
     if(Object.keys(anims).length){out.text[R+"animations/"+o.id+".animation.json"]=J({format_version:"1.8.0",animations:anims});d.animations=Object.fromEntries(Object.keys(anims).map(k=>[k.split(".").pop(),k]));d.scripts={animate};}
     return out;
   };
